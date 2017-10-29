@@ -1,13 +1,13 @@
 import pygame
 # from PIL import Image
-import io
-
 from random import randint, choice
+
+from sprites import TextBtn
 
 # pygame initialization
 pygame.init()
 
-# global variables (constants)
+# global variables
 BG_WIDTH = 640
 BG_HEIGHT = 480
 
@@ -40,7 +40,7 @@ BLACK = (30, 30, 32)
 RED = (220, 53, 34)
 
 # load initial background
-BG = pygame.image.load('bg.jpg')
+MAP = pygame.image.load('bg.jpg')
 
 # prepare plane image
 PLANE_SIZE = (17, 17)
@@ -51,27 +51,33 @@ PLANE_SIZE = (17, 17)
 PLANE = pygame.image.load('plane_1.png')
 
 
-def change_bg():
+def change_map():
     bx = choice([True, False])
     by = choice([True, False])
 
     if bx == by:
         bx, by = True, True
-    global BG
-    BG = pygame.transform.flip(BG, bx, by)
+    global MAP
+    MAP = pygame.transform.flip(MAP, bx, by)
 
 
-def set_bg(x, y):
-    screen.blit(BG, (x, y))
+def set_map(x, y):
+    screen.blit(MAP, (x, y))
 
 
 def set_plane(x, y):
     screen.blit(PLANE, (x, y))
 
 
+def change_level():
+    change_map()
+    global plane_x, plane_y
+    plane_y = randint(5, BG_HEIGHT + 5 - PLANE_SIZE[0])
+    plane_x = randint(5, BG_WIDTH + 5 - PLANE_SIZE[1])
+
+
 plane_x = (DISPLAY_WIDTH / 2)
 plane_y = (DISPLAY_HEIGHT / 2)
-
 
 screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
@@ -89,53 +95,40 @@ plane_mask = []
 start_ticks = pygame.time.get_ticks()
 
 
-def change_level():
-    change_bg()
-    global plane_x, plane_y
-    plane_y = randint(5, BG_HEIGHT + 5 - PLANE_SIZE[0])
-    plane_x = randint(5, BG_WIDTH + 5 - PLANE_SIZE[1])
-
-def text_objects(text, font, color):
-    textSurface = font.render(text, True, color)
-    return textSurface, textSurface.get_rect()
-
-btn_font = pygame.font.SysFont('arial', 20)
-
 # mainlooop
 while not crashed:
-    start_surf, start_rect = text_objects("Start!", btn_font, DARK)
-    start_rect.center = ( (START_X + 15 +(50/2)), (START_Y+(BTN_H/2)) )
 
-    reset_surf, reset_rect = text_objects("Reset!", btn_font, DARK)
-    reset_rect.center = ( (RESET_X + 15 +(50/2)), (RESET_Y+(BTN_H/2)) )
-    
-    stop_surf, stop_rect = text_objects("Stop!", btn_font, RED)
-    stop_rect.center = ( (STOP_X + 15 +(50/2)), (STOP_Y+(BTN_H/2)) )
-    
+    start_btn = TextBtn(text="Start!", pos=(START_X, START_Y), size=(BTN_W, BTN_H), font_size=20, font='arial',
+                        bg=(226, 227, 223), text_color=DARK)
 
-    
+    reset_btn = TextBtn(text="Reset!", pos=(RESET_X, RESET_Y), size=(BTN_W, BTN_H), font_size=20, font='arial',
+                        bg=(226, 227, 223), text_color=DARK)
+
+    stop_btn = TextBtn(text="Stop!", pos=(STOP_X, STOP_Y), size=(BTN_W, BTN_H), font_size=20, font='arial',
+                       bg=(226, 227, 223), text_color=RED)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             crashed = True
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            
+
             # button start
-            if start_rect.collidepoint(x, y):
+            if start_btn.rect.collidepoint(x, y):
                 play = True
                 score = 0
                 start_ticks = pygame.time.get_ticks()
 
             if play:
                 # button stop
-                if stop_rect.collidepoint(x, y):
+                if stop_btn.rect.collidepoint(x, y):
                     play = False
                     score = 0
                     start_ticks = pygame.time.get_ticks()
-                    
+
                 # button reset
-                if reset_rect.collidepoint(x, y):
+                if reset_btn.rect.collidepoint(x, y):
                     change_level()
                     score = 0
                     start_ticks = pygame.time.get_ticks()
@@ -148,8 +141,6 @@ while not crashed:
                     score += 1
                     start_ticks = pygame.time.get_ticks()
 
-    
-    
     screen.fill(WHITE)
 
     my_font = pygame.font.SysFont("monospace", 16)
@@ -162,22 +153,17 @@ while not crashed:
     scoretext = my_font.render("Score = " + str(score), 1, RED)
     screen.blit(scoretext, (LEFT, 10))
 
+    start_btn.draw(screen)
 
-    pygame.draw.rect(screen, (226, 227, 223),(START_X,START_Y,BTN_W,BTN_H))
-    screen.blit(start_surf, start_rect)
     if play:
-        pygame.draw.rect(screen, (226, 227, 223),(RESET_X,RESET_Y,BTN_W,BTN_H))
-        screen.blit(reset_surf, reset_rect)
-        pygame.draw.rect(screen, (226, 227, 223),(STOP_X,STOP_Y,BTN_W,BTN_H))
-        screen.blit(stop_surf, stop_rect)
+        reset_btn.draw(screen)
+        stop_btn.draw(screen)
 
-    
-    set_bg(5, 5)
+    set_map(5, 5)
     set_plane(plane_x, plane_y)
 
     pygame.display.update()
     clock.tick(30)
-
 
 # exit game
 if crashed:
